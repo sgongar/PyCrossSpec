@@ -1,38 +1,74 @@
-from __future__ import print_function, division
-from PyAstronomy import pyasl
+#!/usr/local/bin/python3
+
+# Cross-correlate a spectrum with a reference
+
+# Returns the relative spectral shift or radial velocity
+
+# Uses the pyastronomy library function
+
+import os
+import sys
 import numpy as np
+from PyAstronomy import pyasl
 import matplotlib.pylab as plt
 
-# Create the template
-tw = np.linspace(5000,5010,1000)
-tf = np.exp(-(tw-5004.0)**2/(2.*0.1**2))
 
-# Create data, which are not that well sampled
-dw = np.linspace(5000,5010,200)
-df = np.exp(-(dw-5004.17)**2/(2.*0.1**2))
+if len(sys.argv) == 1:
+  sys.exit("Usage: spectrum_crosscorr.py spectrum template rvmin rvmax rvstep skip ")
+elif len(sys.argv) == 7:
+  spfile = sys.argv[1]
+  tpfile = sys.argv[2]
+  rvmin = float(sys.argv[3])
+  rvmax = float(sys.argv[4])
+  rvstep = float(sys.argv[5])
+  skip = int(float(sys.argv[6]))
+else:
+  sys.exit("Usage: spectrum_crosscorr.py  spectrum template rvmin rvmax rvstep skip ")
 
-# Plot template and data
-plt.title("Template (blue) and data (red)")
-plt.plot(tw, tf, 'b.-')
-plt.plot(dw, df, 'r.-')
+spectrum = np.loadtxt(spfile)
+spwl = spectrum[:,0]
+spfl = spectrum[:,1]
+
+# print spwl
+# print spflux
+
+template = np.loadtxt(tpfile)
+tpwl = template[:,0]
+tpfl = template[:,1]
+
+# print spwl
+# print spfl
+
+# Plot a preview of the spectrum and the template
+
+plt.title("Spectrum (red) and the template (blue)")
+plt.plot(spwl, spfl, 'r.-')
+plt.plot(tpwl, tpfl, 'b.-')
+
 plt.show()
 
-# Carry out the cross-correlation.
-# The RV-range is -30 - +30 km/s in steps of 0.6 km/s.
-# The first and last 20 points of the data are skipped.
-rv, cc = pyasl.crosscorrRV(dw, df, tw, tf, -30., 30., 30./50., skipedge=20)
 
-print(df)
+# Carry out the cross-correlation.
+# The RV-range is -rvmin to rvmax  km/s in steps of rvstep
+# The first and last skipedge points of the data are skipped.
+
+rv, cc = pyasl.crosscorrRV(spwl, spfl, tpwl, tpfl, rvmin, rvmax, rvstep, mode='doppler', skipedge=skip)
+
 
 # Find the index of maximum cross-correlation function
+
 maxind = np.argmax(cc)
 
-print("Cross-correlation function is maximized at dRV = ", rv[maxind], " km/s")
+print("Cross-correlation function is maximized at relative RV = ", rv[maxind], " (km/s)")
 if rv[maxind] > 0.0:
-  print("  A red-shift with respect to the template")
+  print("  This is a red-shift  with respect to the template.")
 else:
-  print("  A blue-shift with respect to the template")
+  print("  This is a blue-shift with respect to the template.")
 
 plt.plot(rv, cc, 'bp-')
 plt.plot(rv[maxind], cc[maxind], 'ro')
 plt.show()
+
+print("Relative RV [km/s]: ", rv[maxind])
+
+exit()
