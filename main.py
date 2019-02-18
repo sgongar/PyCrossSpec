@@ -41,20 +41,29 @@ from os import listdir
 
 from find_rv import radial_velocity
 
+cut_ = True
 test = False
 plot_ = False
+np.set_printoptions(suppress=True)
 
 total_rv = []
 
+total_te = []
+total_de = []
+total_error = []
+
+files_dir = '/home/sgongora/Dev/PyCrossSpec/files/'
+
 # Loads HR 260
-spectra_references = listdir('/home/sgongora/Dev/PyCrossSpec/files/HR_260/sx1')
+spectra_references = listdir('{}HR_260/sx1'.format(files_dir))
 for spectra_reference in spectra_references:
-    hdu_hr_260 = fits.open('/home/sgongora/Dev/PyCrossSpec/files/HR_260/sx1/{}'.format(spectra_reference))
+    hdu_hr_260 = fits.open('{}HR_260/sx1/{}'.format(files_dir,
+                                                    spectra_reference))
     # Loads HR 4521
-    spectra_list = listdir('/home/sgongora/Dev/PyCrossSpec/files/HR_4521/sx1')
+    spectra_list = listdir('{}HR_4521/sx1'.format(files_dir))
     for spectra in spectra_list:
         # print('New test')
-        hdu_hr_4521 = fits.open('/home/sgongora/Dev/PyCrossSpec/files/HR_4521/sx1/{}'.format(spectra))
+        hdu_hr_4521 = fits.open('{}HR_4521/sx1/{}'.format(files_dir, spectra))
 
         # print(hdu_hr_4521[1].data.columns)
         # print('Reference: {}'.format(spectra_reference))
@@ -79,6 +88,10 @@ for spectra_reference in spectra_references:
             df = hdu_hr_4521[1].data.field('FLUX')[0]
             de = hdu_hr_4521[1].data.field('ERROR')[0]
 
+        total_te.append(np.mean(te))
+        total_de.append(np.mean(de))
+        total_error.append(np.mean(te) + np.mean(de))
+
         # Plot template and data
         if plot_:
             plt.title("Template (blue) and data (red)")
@@ -86,24 +99,35 @@ for spectra_reference in spectra_references:
             plt.plot(dw, df, 'r.-')
             plt.show()
 
+        outlier_margin = 75
+        # Removes outliers
+        if cut_:
+            tw = tw[outlier_margin:-outlier_margin]
+            tf = tf[outlier_margin:-outlier_margin]
+            te = te[outlier_margin:-outlier_margin]
+
+            dw = dw[outlier_margin:-outlier_margin]
+            df = df[outlier_margin:-outlier_margin]
+            de = de[outlier_margin:-outlier_margin]
+
         output_test = radial_velocity(dw, df, de, # spectral data on your target (uncertainty is NOT SNR)
                                       tw, tf, te, # spectral data on a star with known RV, in the same (or at least overlapping) wavelength region
                                       'HR_4521', 'HR_260', # their names, for the plots (see point 2 below for details)
                                       0.3, 0.01, # the radial velocity of the standard, for the plots
                                       1, # for the plots. Should be the same for both.
-                                      200, # set to 200 for 'default', see point 3 below for what this means
+                                      2000, # set to 200 for 'default', see point 3 below for what this means
                                       0, 0, 0) # set all to zero by default. See point 4 below for what this means
 
         # Carry out the cross-correlation.
         # The RV-range is -30 - +30 km/s in steps of 0.6 km/s.
         # The first and last 20 points of the data are skipped.
         # rv, cc = pyasl.crosscorrRV(dw, df, tw, tf, -30., 30., 30./50., skipedge=20)
-        rv, cc = pyasl.crosscorrRV(dw, df, tw, tf, -100., 100., 15./50., skipedge=20)
+        # rv, cc = pyasl.crosscorrRV(dw, df, tw, tf, -100., 100., 15./50., skipedge=20)
 
         # Find the index of maximum cross-correlation function
-        maxind = np.argmax(cc)
+        # maxind = np.argmax(cc)
 
-        total_rv.append(float(output_test[0]))
+        # total_rv.append(float(output_test[0]))
 
         # print("Method A - Cross-correlation function is maximized at dRV = ", output_test[0], " km/s")
         # print("Method B - Cross-correlation function is maximized at dRV = ", rv[maxind], " km/s")
@@ -113,5 +137,18 @@ for spectra_reference in spectra_references:
         # plt.plot(rv[maxind], cc[maxind], 'ro')
         # plt.show()
 
-rv_mean = np.mean(total_rv)
-print('rv_mean {}'.format(rv_mean))
+        # print(output_test[0])
+        total_rv.append(output_test[0])
+        # print(' ')
+
+import pandas
+total_dict = {'total_te': total_te, 'total_de': total_de, 'total_rv': total_rv,
+              'total_error': total_error}
+for key_ in total_dict.keys():
+    print('key {} - len {}'.format(key_, len(total_dict[key_])))
+
+total_df = pandas.DataFrame.from_dict(total_dict)
+
+total_df.to_csv('total.csv')
+
+print(np.mean(total_rv))
