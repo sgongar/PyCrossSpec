@@ -14,16 +14,16 @@ import matplotlib.pylab as plt
 
 
 if len(sys.argv) == 1:
-  sys.exit("Usage: spectrum_crosscorr.py spectrum template rvmin rvmax rvstep skip ")
+    sys.exit("Usage: spectrum_crosscorr.py spectrum template rvmin rvmax rvstep skip ")
 elif len(sys.argv) == 7:
-  spfile = sys.argv[1]
-  tpfile = sys.argv[2]
-  rvmin = float(sys.argv[3])
-  rvmax = float(sys.argv[4])
-  rvstep = float(sys.argv[5])
-  skip = int(float(sys.argv[6]))
+    spfile = sys.argv[1]
+    tpfile = sys.argv[2]
+    rvmin = float(sys.argv[3])
+    rvmax = float(sys.argv[4])
+    rvstep = float(sys.argv[5])
+    skip = int(float(sys.argv[6]))
 else:
-  sys.exit("Usage: spectrum_crosscorr.py  spectrum template rvmin rvmax rvstep skip ")
+    sys.exit("Usage: spectrum_crosscorr.py  spectrum template rvmin rvmax rvstep skip ")
 
 spectrum = np.loadtxt(spfile)
 spwl = spectrum[:,0]
@@ -61,9 +61,9 @@ maxind = np.argmax(cc)
 
 print("Cross-correlation function is maximized at relative RV = ", rv[maxind], " (km/s)")
 if rv[maxind] > 0.0:
-  print("  This is a red-shift  with respect to the template.")
+    print("  This is a red-shift  with respect to the template.")
 else:
-  print("  This is a blue-shift with respect to the template.")
+    print("  This is a blue-shift with respect to the template.")
 
 plt.plot(rv, cc, 'bp-')
 plt.plot(rv[maxind], cc[maxind], 'ro')
