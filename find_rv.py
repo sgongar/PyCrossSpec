@@ -45,10 +45,9 @@ import scipy.ndimage
 # Particular options
 np.set_printoptions(threshold=np.inf)
 
-def radial_velocity(wv_obj, fx_obj, sig_obj,
-                    wv_std, fx_std, sig_std,
-					obj_name, std_name, rv_std, rv_std_err,
-					order, xcorr_width, cut, cutstart, cutend):
+
+def radial_velocity(wv_obj, fx_obj, sig_obj, wv_std, fx_std, sig_std, obj_name, std_name,
+                    rv_std, rv_std_err, order, xcorr_width, cut, cutstart, cutend):
     """Calculates a radial velocity
     @param: wv_obj, wavelength_object
     @param: fx_obj, flux_object
